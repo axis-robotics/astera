@@ -49,3 +49,9 @@ x = read_data_from_avr()
 print(x)
 
 # while read_data_from_avr() != "done": print("not yes")
+
+
+
+
+
+GPIO.cleanup()
