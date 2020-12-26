@@ -35,7 +35,8 @@ def read_data_from_avr():
 #         main()
 #     return main()
 
-
+# sudo apt-get install libi2c-dev i2c-tools
+# sudo i2cdetect -y -r 1
 fake_data_testing = [
     [69.55, 70.95, 80.99],
     [57.48, 68.57, 90.00],
