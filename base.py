@@ -21,11 +21,11 @@ class FLAGS: # Customizable settings.
     score = 0.52
 
 def preprocess_cam(image_path): # Generate the image used in detection.
-
+    ## TODO: Camera and blending.
     original_image = cv2.imread(image_path)
     return cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
-session = InteractiveSession(config=ConfigProto(device_count = {'GPU': 0})) # Disables the GPU. (Remove the device_count parameter to re-enable)
+session = InteractiveSession(config=ConfigProto())
 
 # Detection model.
 
@@ -41,7 +41,6 @@ def detect_flowers(original_image):
 
     image_data = cv2.resize(original_image, (FLAGS.size, FLAGS.size)) / 255.0
     image_data = np.asarray([image_data]).astype(np.float32)
-
 
     detection_interpreter.set_tensor(detection_input_details[0]['index'], image_data)
     detection_interpreter.invoke()
@@ -86,7 +85,8 @@ def classify_flowers(output_flowers):
     output_data = classification_interpreter.get_tensor(classification_output_details[0]['index'])
     print(output_data)
 
-# Transformation Algorithm.
+# Transformation algorithm.
+
 def theta_calculation(F, E_n, G_n):
     theta_n_eqn_1 = (2 * (-F + math.sqrt(F**2 + E_n**2 - G_n**2) )) / (G_n**2 - E_n**2)
     theta_n_eqn_2 = (2 * (-F - math.sqrt(F**2 + E_n**2 - G_n**2) )) / (G_n**2 - E_n**2)
