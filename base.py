@@ -87,38 +87,42 @@ def classify_flowers(output_flowers):
 
 # Transformation algorithm.
 
-def theta_calculation(F, E_n, G_n):
-    theta_n_eqn_1 = (2 * (-F + math.sqrt(F**2 + E_n**2 - G_n**2) )) / (G_n**2 - E_n**2)
-    theta_n_eqn_2 = (2 * (-F - math.sqrt(F**2 + E_n**2 - G_n**2) )) / (G_n**2 - E_n**2)
-    theta_n_1 = math.atan(theta_n_eqn_1)
-    theta_n_2 = math.atan(theta_n_eqn_2)
-    return theta_n_1 if theta_n_1 > theta_n_2 else theta_n_2
-
 def transformation_matrix(flower):
-    
-    return flower
-    
-    L, l = 1, 1
-    R, r = 1, 1
-    x, y, z = flower[0], flower[1], 0
-    
-    w_b, u_b, s_b = R/2, R, math.sqrt(3) * R
-    w_p, u_p, s_p = r/2, r, math.sqrt(3) * r
+    SQRT_3 = np.sqrt(3)
+
+    L, l = 0.524, 1.244
+    R, r = 0.567 / SQRT_3, 0.076 / SQRT_3
+    z = -1.1
+
+    x, y = flower[0] * X_RATIO, flower[1] * Y_RATIO
+    w_b, u_b, s_b = R/2, R, SQRT_3 * R
+    w_p, u_p, s_p = r/2, r, SQRT_3 * r
     a = w_b - u_p
-    b = s_p / 2 - 0.5 * math.sqrt(3) * w_b
+    b = s_p / 2 - 0.5 * SQRT_3 * w_b
     c = w_p - 0.5 * w_b
 
-    E_1 = 2 * L * (y + a)
-    E_2 = L * ( math.sqrt(3) * (x + b) + y + c )
-    E_3 = L * ( math.sqrt(3) * (x - b) - y - c )
-    F =  2 * z * L
-    G_1 = x**2 + y**2 + z**2 + a**2 + L**2 + 2*y*a - l**2
-    G_2 = x**2 + y**2 + z**2 + a**2 + L**2 + 2*x*b + 2*y*c - l**2
-    G_3 = x**2 + y**2 + z**2 + a**2 + L**2 + 2*x*b + 2*y*c - l**2
-    theta_1 = theta_calculation(F, E_1, G_1)
-    theta_2 = theta_calculation(F, E_2, G_2)
-    theta_3 = theta_calculation(F, E_3, G_3)
-    return (theta_1, theta_2, theta_3)
+    E = np.array([
+        2 * L * (y + a),
+        -L * ( SQRT_3 * (x + b) + y + c ),
+        L * ( SQRT_3 * (x - b) - y - c ),
+    ])
+    G = np.array([
+        x**2 + y**2 + z**2 + a**2 + L**2 + 2*y*a - l**2,
+        x**2 + y**2 + z**2 + a**2 + L**2 + 2*x*b + 2*y*c - l**2,
+        x**2 + y**2 + z**2 + a**2 + L**2 - 2*x*b + 2*y*c - l**2,
+    ])
+    F = np.array(
+        [2 * z * L] * 3
+    )
+
+    t1_eqn = (-F + np.sqrt(E**2 + F**2 - G**2)) / (G - E)
+    t2_eqn = (-F - np.sqrt(E**2 + F**2 - G**2)) / (G - E)
+    t1 = (2 * np.arctan(t1_eqn) * 180 / np.pi).reshape((3, 1))
+    t2 = (2 * np.arctan(t2_eqn) * 180 / np.pi).reshape((3, 1))
+    t = np.concatenate((t1, t2), axis=1).tolist()
+    return [
+        (i[0] if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
+    ]
 
 # usage
 img = preprocess_cam('test.jpg')
