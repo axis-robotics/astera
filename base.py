@@ -14,11 +14,20 @@ from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
 class FLAGS: # Customizable settings.
+    
+    ## AI code settings
     detection_weights = "weights/yolov4-detection.tflite"
     classification_weights = "weights/yolov4-detection.tflite"
     size = 416
     iou = 0.45
     score = 0.52
+    
+    ## Transformation settings
+    L, l = 0.524, 1.244
+    R, r = 0.567 / np.sqrt(3), 0.076 / np.sqrt(3)
+    z = -1.1
+    X_RATIO, Y_RATIO = 1, 1
+
 
 def preprocess_cam(image_path): # Generate the image used in detection.
     ## TODO: Camera and blending.
@@ -90,11 +99,11 @@ def classify_flowers(output_flowers):
 def transformation_matrix(flower):
     SQRT_3 = np.sqrt(3)
 
-    L, l = 0.524, 1.244
-    R, r = 0.567 / SQRT_3, 0.076 / SQRT_3
-    z = -1.1
+    L, l = FLAGS.L, FLAGS.l
+    R, r = FLAGS.R, FLAGS.r
+    z = FLAGS.z
 
-    x, y = flower[0] * X_RATIO, flower[1] * Y_RATIO
+    x, y = flower[0] * FLAGS.X_RATIO, flower[1] * FLAGS.Y_RATIO
     w_b, u_b, s_b = R/2, R, SQRT_3 * R
     w_p, u_p, s_p = r/2, r, SQRT_3 * r
     a = w_b - u_p
@@ -119,14 +128,14 @@ def transformation_matrix(flower):
     t2_eqn = (-F - np.sqrt(E**2 + F**2 - G**2)) / (G - E)
     t1 = (2 * np.arctan(t1_eqn) * 180 / np.pi).reshape((3, 1))
     t2 = (2 * np.arctan(t2_eqn) * 180 / np.pi).reshape((3, 1))
-    t = np.concatenate((t1, t2), axis=1).tolist()
+    t = np.round(np.concatenate((t1, t2), axis=1).tolist(), 2)
     return [
-        (i[0] if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
+        (i[0] * 100 if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
     ]
 
 # usage
 img = preprocess_cam('test.jpg')
 detected_flowers = detect_flowers(img)
 chamomile_flowers = classify_flowers(detected_flowers)
-angles = list(map(transformation_matrix, chamomile_flowers))
+angles = chamomile_flowers#list(map(transformation_matrix, chamomile_flowers))
 print(angles)
