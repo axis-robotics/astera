@@ -130,12 +130,5 @@ def transformation_matrix(flower):
     t2 = (2 * np.arctan(t2_eqn) * 180 / np.pi).reshape((3, 1))
     t = np.round(np.concatenate((t1, t2), axis=1).tolist(), 2)
     return [
-        (i[0] * 100 if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
+        ((i[0] + 90) * 100 if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
     ]
-
-# usage
-img = preprocess_cam('test.jpg')
-detected_flowers = detect_flowers(img)
-chamomile_flowers = classify_flowers(detected_flowers)
-angles = chamomile_flowers#list(map(transformation_matrix, chamomile_flowers))
-print(angles)
