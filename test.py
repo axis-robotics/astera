@@ -5,8 +5,7 @@ ADDRESS = 0x04
 
 
 def write_data_to_avr(value):
-    byteValue = [ord(c) for c in value]
-    return bus.write_i2c_block_data(ADDRESS, 0x00, byteValue)
+    return bus.write_byte(ADDRESS, value)
 
 def read_data_from_avr():
     number = bus.read_byte(ADDRESS)
@@ -16,10 +15,10 @@ def read_data_from_avr():
 # sudo apt-get install libi2c-dev i2c-tools
 # sudo i2cdetect -y -r 1
 fake_data_testing = [
-    [69.55, 70.95, 80.99],
-    [57.48, 68.57, 90.00],
-    [22.33, 21.77, 30.32],
-    [53.26, 34.89, 10.44],
+    [6955, 17095, 17999],
+    [5748, 6857, 9000],
+    [12233, 2177, 3032],
+    [5326, 13489, 1044],
 ]
 message = '["Hello World."]' #json.dumps(fake_data_testing)
 write_data_to_avr(message)

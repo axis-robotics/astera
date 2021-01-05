@@ -11,9 +11,8 @@ GPIO.setmode(GPIO.BOARD)
 GPIO.setup(SWITCH_INPUT_PIN, GPIO.IN)
 
 def write_data_to_avr(value):
-    return bus.write_byte(ADDRESS, value)
-    # byteValue = [ord(c) for c in value]
-    # return bus.write_i2c_block_data(ADDRESS, 0x00, byteValue)
+    byteValue = [ord(c) for c in value]
+    return bus.write_i2c_block_data(ADDRESS, 0x00, byteValue)
 
 def read_data_from_avr():
     number = bus.read_byte(ADDRESS)
