@@ -23,9 +23,10 @@ class FLAGS: # Customizable settings.
     score = 0.52
     
     ## Transformation settings
-    L, l = 0.524, 1.244
-    R, r = 0.567 / np.sqrt(3), 0.076 / np.sqrt(3)
-    z = -1.1
+    L, l = 0.160, 0.500
+    R, r = 0.085, 0.065
+    z = -0.400
+    ANGLE_SHIFT, ANGLE_SCALE = 90, 100
     X_RATIO, Y_RATIO = 1, 1
 
 
@@ -117,8 +118,8 @@ def transformation_matrix(flower):
     ])
     G = np.array([
         x**2 + y**2 + z**2 + a**2 + L**2 + 2*y*a - l**2,
-        x**2 + y**2 + z**2 + a**2 + L**2 + 2*x*b + 2*y*c - l**2,
-        x**2 + y**2 + z**2 + a**2 + L**2 - 2*x*b + 2*y*c - l**2,
+        x**2 + y**2 + z**2 + b**2 + c**2 + L**2 + 2*x*b + 2*y*c - l**2,
+        x**2 + y**2 + z**2 + b**2 + c**2 + L**2 - 2*x*b + 2*y*c - l**2,
     ])
     F = np.array(
         [2 * z * L] * 3
@@ -130,5 +131,5 @@ def transformation_matrix(flower):
     t2 = (2 * np.arctan(t2_eqn) * 180 / np.pi).reshape((3, 1))
     t = np.round(np.concatenate((t1, t2), axis=1).tolist(), 2)
     return [
-        ((i[0] + 90) * 100 if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
+        ((i[0] + FLAGS.ANGLE_SHIFT) * FLAGS.ANGLE_SCALE if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
     ]
