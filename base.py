@@ -1,11 +1,16 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # Supress TF debugging info. (Uncomment in case of debugging)
 
-import math
+import random
+random.seed(0)
+
 import cv2
-import colorsys, random
+import colorsys
 import numpy as np
 import tensorflow as tf
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
 
 def read_class_names(class_file_name):
     names = {}
@@ -14,16 +19,39 @@ def read_class_names(class_file_name):
             names[ID] = name.strip('\n')
     return names
 
-def detect_coordinates(image, bboxes, classes=read_class_names("./weights/classes.names"), show_label=True):
-    num_classes = len(classes)
+
+def preprocess_cam(image_path): # Generate the image used in detection.
+    ## TODO: Camera and blending.
+    original_image = cv2.imread(image_path)
+    return cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
+
+class FLAGS: # Customizable settings.
+    
+    ## AI code settings
+    detection_weights = "weights/yolov4-detection.tflite"
+    classification_weights = "weights/yolov4-detection.tflite"
+    class_names = read_class_names("weights/classes.names")
+    size = 416
+    iou = 0.45
+    score = 0.52
+    
+    ## Transformation settings
+    L, l = 0.160, 0.500
+    R, r = 0.085, 0.065
+    z = -0.400
+    ANGLE_SHIFT, ANGLE_SCALE = 90, 100
+    X_RATIO, Y_RATIO = 1, 1
+
+
+def detect_coordinates(image, bboxes):
+
+    num_classes = len(FLAGS.class_names)
     image_h, image_w, _ = image.shape
+
     hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
     colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
     colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
-
-    random.seed(0)
     random.shuffle(colors)
-    random.seed(None)
 
     out_boxes, out_scores, out_classes, num_boxes = bboxes
     return_value = []
@@ -35,9 +63,6 @@ def detect_coordinates(image, bboxes, classes=read_class_names("./weights/classe
         coor[1] = int(coor[1] * image_w)
         coor[3] = int(coor[3] * image_w)
 
-        fontScale = 0.5
-        score = out_scores[0][i]
-        class_ind = int(out_classes[0][i])
         c1, c2 = (int(coor[1]), int(coor[0])), (int(coor[3]), int(coor[2]))
         return_value.append(
             {
@@ -46,10 +71,6 @@ def detect_coordinates(image, bboxes, classes=read_class_names("./weights/classe
             }
         )
     return return_value
-
-
-
-
 
 
 def filter_boxes(box_xywh, scores, score_threshold=0.4, input_shape = tf.constant([416,416])):
@@ -71,45 +92,10 @@ def filter_boxes(box_xywh, scores, score_threshold=0.4, input_shape = tf.constan
     box_mins = (box_yx - (box_hw / 2.)) / input_shape
     box_maxes = (box_yx + (box_hw / 2.)) / input_shape
     boxes = tf.concat([
-        box_mins[..., 0:1],  # y_min
-        box_mins[..., 1:2],  # x_min
-        box_maxes[..., 0:1],  # y_max
-        box_maxes[..., 1:2]  # x_max
+        box_mins[..., 0:1], box_mins[..., 1:2],
+        box_maxes[..., 0:1], box_maxes[..., 1:2]
     ], axis=-1)
-    # return tf.concat([boxes, pred_conf], axis=-1)
     return (boxes, pred_conf)
-
-
-
-
-
-
-
-from tensorflow.python.saved_model import tag_constants
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
-
-class FLAGS: # Customizable settings.
-    
-    ## AI code settings
-    detection_weights = "weights/yolov4-detection.tflite"
-    classification_weights = "weights/yolov4-detection.tflite"
-    size = 416
-    iou = 0.45
-    score = 0.52
-    
-    ## Transformation settings
-    L, l = 0.160, 0.500
-    R, r = 0.085, 0.065
-    z = -0.400
-    ANGLE_SHIFT, ANGLE_SCALE = 90, 100
-    X_RATIO, Y_RATIO = 1, 1
-
-
-def preprocess_cam(image_path): # Generate the image used in detection.
-    ## TODO: Camera and blending.
-    original_image = cv2.imread(image_path)
-    return cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
 session = InteractiveSession(config=ConfigProto())
 
@@ -209,17 +195,3 @@ def transformation_matrix(flower):
     return [
         ((i[0] + FLAGS.ANGLE_SHIFT) * FLAGS.ANGLE_SCALE if np.abs(i[0]) < np.abs(i[1]) else i[1]) for i in t
     ]
-
-
-
-for i in range(1, 3):
-    img = preprocess_cam(f"examples/{i}.jpg")
-    flowers = detect_flowers(img)
-    y = classify_flowers(flowers)
-    original_image = cv2.imread(f"examples/{i}.jpg")
-    print(len(flowers))
-    for j in flowers:
-        original_image = cv2.circle(original_image, j['center'], 1, (0, 0, 255), 5)
-    cv2.imwrite(f"examples/done - {i}.jpg", original_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()

@@ -1,3 +1,19 @@
+import base
+import cv2
+
+for i in range(1, 4):
+    img = base.preprocess_cam(f"examples/{i}.jpg")
+    flowers = base.detect_flowers(img)
+    y = base.classify_flowers(flowers)
+    ## MAP TRANSFORM y directly
+    original_image = cv2.imread(f"examples/{i}.jpg")
+    print(len(flowers))
+    for j in flowers:
+        original_image = cv2.circle(original_image, j['center'], 1, (0, 0, 255), 5)
+    cv2.imwrite(f"examples/done - {i}.jpg", original_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 exit()
 import smbus2
 import json
