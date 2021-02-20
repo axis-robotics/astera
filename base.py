@@ -35,13 +35,9 @@ class FLAGS: # Customizable settings.
     ANGLE_SHIFT, ANGLE_SCALE = 0, 1
     X_RATIO, Y_RATIO = 1, 1
 
+    ## Camera settings
+    CAM_WIDTH, CAM_HEIGHT = 1280, 720
 
-
-def read_cam(): # Generate the image used in detection.
-    
-    ## TODO: Camera and blending.
-    original_image = cv2.imread(f"examples/2.jpg")
-    return cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
 
 def detect_coordinates(image, bboxes):
@@ -97,6 +93,19 @@ def filter_boxes(box_xywh, scores, score_threshold=0.4, input_shape = tf.constan
         box_maxes[..., 0:1], box_maxes[..., 1:2]
     ], axis=-1)
     return (boxes, pred_conf)
+
+# Camera
+
+## TODO: Camera and blending.
+camera_session = cv2.VideoCapture(f"nvarguscamerasrc ! video/x-raw(memory:NVMM), width=(int){FLAGS.CAM_WIDTH}, height=(int){FLAGS.CAM_HEIGHT},format=(string)NV12, framerate=(fraction)30/1 ! nvvidconv ! video/x-raw, format=(string)BGRx ! videoconvert !  appsink")
+
+def read_cam(): # Generate the image used in detection.
+    if camera_session.isOpened():
+        _, img = camera_session.read()
+        return img
+    return None
+
+def release_cam(): camera_session.release()
 
 session = InteractiveSession(config=ConfigProto())
 
