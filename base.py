@@ -19,17 +19,10 @@ def read_class_names(class_file_name):
             names[ID] = name.strip('\n')
     return names
 
-
-def preprocess_cam(image_path): # Generate the image used in detection.
-    ## TODO: Camera and blending.
-    original_image = cv2.imread(image_path)
-    return cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-
 class FLAGS: # Customizable settings.
     
     ## AI code settings
     detection_weights = "weights/yolov4-detection.tflite"
-    classification_weights = "weights/yolov4-detection.tflite"
     class_names = read_class_names("weights/classes.names")
     size = 416
     iou = 0.45
@@ -39,8 +32,16 @@ class FLAGS: # Customizable settings.
     L, l = 0.160, 0.500
     R, r = 0.085, 0.065
     z = -0.400
-    ANGLE_SHIFT, ANGLE_SCALE = 90, 100
+    ANGLE_SHIFT, ANGLE_SCALE = 0, 1
     X_RATIO, Y_RATIO = 1, 1
+
+
+
+def read_cam(): # Generate the image used in detection.
+    
+    ## TODO: Camera and blending.
+    original_image = cv2.imread(f"examples/2.jpg")
+    return cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
 
 def detect_coordinates(image, bboxes):
@@ -132,30 +133,6 @@ def detect_flowers(original_image):
     pred_bbox = [boxes.numpy(), scores.numpy(), classes.numpy(), valid_detections.numpy()]
     return detect_coordinates(original_image, pred_bbox)
 
-# Classification model.
-
-## Load TFLite model and allocate tensors.
-classification_interpreter = tf.lite.Interpreter(model_path=FLAGS.classification_weights)
-classification_interpreter.allocate_tensors()
-
-## Get input and output tensors.
-classification_input_details = classification_interpreter.get_input_details()
-classification_output_details = classification_interpreter.get_output_details()
-
-
-def classify_flowers(output_flowers):
-    return [flower['center'] for flower in output_flowers]
-
-    images_data = [
-        cv2.resize(flower['image'], (FLAGS.size, FLAGS.size)) / 255.0 for flower in output_flowers
-    ]
-    input_data = np.asarray(images_data, dtype=np.float32)
-    classification_interpreter.set_tensor(classification_input_details[0]['index'], images_data)
-
-    classification_interpreter.invoke()
-
-    output_data = classification_interpreter.get_tensor(classification_output_details[0]['index'])
-    print(output_data)
 
 # Transformation algorithm.
 
