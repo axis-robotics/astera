@@ -132,3 +132,5 @@ dmypy.json
 chromium-browser.desktop
 HERE.txt
 .swp
+.vscode/*
+examples/*
