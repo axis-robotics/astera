@@ -22,11 +22,11 @@ def read_class_names(class_file_name):
 class FLAGS: # Customizable settings.
     
     ## AI code settings
-    detection_weights = "weights/yolov4-detection.tflite"
-    class_names = read_class_names("weights/classes.names")
-    size = 416
-    iou = 0.45
-    score = 0.52
+    WEIGHTS_PATH = "weights/yolov4-detection.tflite"
+    CLASS_NAMES = read_class_names("weights/classes.names")
+    INPUT_SIZE = 416
+    IOU_THRESHOLD = 0.45
+    MIN_SCORE = 0.52
     
     ## Transformation settings
     L, l = 0.160, 0.500
@@ -42,7 +42,7 @@ class FLAGS: # Customizable settings.
 
 def detect_coordinates(image, bboxes):
 
-    num_classes = len(FLAGS.class_names)
+    num_classes = len(FLAGS.CLASS_NAMES)
     image_h, image_w, _ = image.shape
 
     hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
@@ -112,7 +112,7 @@ session = InteractiveSession(config=ConfigProto())
 # Detection model.
 
 ## Load TFLite model and allocate tensors.
-detection_interpreter = tf.lite.Interpreter(model_path=FLAGS.detection_weights)
+detection_interpreter = tf.lite.Interpreter(model_path=FLAGS.WEIGHTS_PATH)
 detection_interpreter.allocate_tensors()
 
 ## Get input and output tensors.
@@ -121,22 +121,22 @@ detection_output_details = detection_interpreter.get_output_details()
 
 def detect_flowers(original_image):
 
-    image_data = cv2.resize(original_image, (FLAGS.size, FLAGS.size)) / 255.0
+    image_data = cv2.resize(original_image, (FLAGS.INPUT_SIZE, FLAGS.INPUT_SIZE)) / 255.0
     image_data = np.asarray([image_data]).astype(np.float32)
 
     detection_interpreter.set_tensor(detection_input_details[0]['index'], image_data)
     detection_interpreter.invoke()
 
     pred = [detection_interpreter.get_tensor(detection_output_details[i]['index']) for i in range(len(detection_output_details))]
-    boxes, pred_conf = filter_boxes(pred[0], pred[1], score_threshold=0.25, input_shape=tf.constant([FLAGS.size, FLAGS.size]))
+    boxes, pred_conf = filter_boxes(pred[0], pred[1], score_threshold=0.25, input_shape=tf.constant([FLAGS.INPUT_SIZE, FLAGS.INPUT_SIZE]))
 
     boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
         boxes=tf.reshape(boxes, (tf.shape(boxes)[0], -1, 1, 4)),
         scores=tf.reshape(pred_conf, (tf.shape(pred_conf)[0], -1, tf.shape(pred_conf)[-1])),
         max_output_size_per_class=50,
         max_total_size=50,
-        iou_threshold=FLAGS.iou,
-        score_threshold=FLAGS.score
+        iou_threshold=FLAGS.IOU_THRESHOLD,
+        score_threshold=FLAGS.MIN_SCORE
     )
 
     pred_bbox = [boxes.numpy(), scores.numpy(), classes.numpy(), valid_detections.numpy()]
